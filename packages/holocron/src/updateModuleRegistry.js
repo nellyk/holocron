@@ -13,9 +13,8 @@
  */
 
 import shallowEqual from 'shallowequal';
-import {
-  getModules, getModuleMap, resetModuleRegistry, addHigherOrderComponent,
-} from './moduleRegistry';
+
+import { getModules, getModuleMap, resetModuleRegistry } from './moduleRegistry';
 import loadModule from './loadModule.node';
 
 export function areModuleEntriesEqual(firstModuleEntry, secondModuleEntry) {
@@ -49,9 +48,8 @@ export default async function updateModuleRegistry({
   let updatedModules = await modulesToUpdate.reduce(async (acc, moduleBatch) => {
     const loadedModules = await acc;
     const nextModules = await Promise.all(moduleBatch.map(
-      async (moduleName) => addHigherOrderComponent(
-        await loadModule(moduleName, newModuleMap.modules[moduleName], onModuleLoad)
-      )
+      (moduleName) => loadModule(moduleName, newModuleMap.modules[moduleName], onModuleLoad)
+
     ));
     return [...loadedModules, ...nextModules];
   }, []);

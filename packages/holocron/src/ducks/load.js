@@ -25,14 +25,14 @@ import {
   MODULE_REDUCER_ADDED,
 } from './constants';
 
-const initialState = iMap({
+export const getInitialState = () => iMap({
   withReducers: iSet(),
   loaded: iSet(),
   failed: iMap(),
   loading: iMap(),
 });
 
-export default function reducer(state = initialState, action) {
+export default function reducer(state = getInitialState(), action) {
   switch (action.type) {
     case REGISTER_MODULE_REDUCER: {
       const { moduleName } = action;
@@ -64,14 +64,14 @@ export default function reducer(state = initialState, action) {
   }
 }
 
-function registerModuleReducer(moduleName) {
+export function registerModuleReducer(moduleName) {
   return {
     type: REGISTER_MODULE_REDUCER,
     moduleName,
   };
 }
 
-function moduleLoaded(moduleName) {
+export function moduleLoaded(moduleName) {
   return {
     type: MODULE_LOADED,
     moduleName,
@@ -118,9 +118,6 @@ export function getLoadingPromise(moduleName) {
 export function loadModule(moduleName) {
   return (dispatch, getState, { modules, rebuildReducer }) => {
     const state = getState();
-    const moduleData = getModuleMap().getIn([MODULES_STORE_KEY, moduleName]);
-
-    let loadPromise;
     if (isLoaded(moduleName)(state)) {
       return Promise.resolve(getModule(moduleName, modules));
     }
@@ -133,11 +130,15 @@ export function loadModule(moduleName) {
       return getLoadingPromise(moduleName)(state);
     }
 
+    const moduleData = getModuleMap().getIn([MODULES_STORE_KEY, moduleName]);
+
     if (!moduleData) {
       const moduleLoadError = new Error(`Could not load Module ${moduleName} because it does not exist in the Module Version Map`);
       dispatch(moduleLoadFailed(moduleName, moduleLoadError));
       return Promise.reject(moduleLoadError);
     }
+
+    let loadPromise;
 
     if (modules) {
       const module = getModule(moduleName, modules);
@@ -151,9 +152,11 @@ export function loadModule(moduleName) {
     return loadPromise
       .then(
         (module) => {
-          if (module[REDUCER_KEY]) dispatch(registerModuleReducer(moduleName));
-          rebuildReducer();
-          dispatch({ type: MODULE_REDUCER_ADDED });
+          if (module[REDUCER_KEY]) {
+            dispatch(registerModuleReducer(moduleName));
+            rebuildReducer();
+            dispatch({ type: MODULE_REDUCER_ADDED });
+          }
           dispatch(moduleLoaded(moduleName));
           return module;
         },

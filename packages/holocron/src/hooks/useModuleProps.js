@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 American Express Travel Related Services Company, Inc.
+ * Copyright 2020 American Express Travel Related Services Company, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,17 @@
  */
 
 import React from 'react';
+import { useDispatch } from 'react-redux';
 
-import { useHolocronModule } from './hooks';
+import { getMergeProps } from '../utility';
 
-export default function holocronModule(holocronConfig) {
-  return (WrappedComponent) => function HolocronWrapper(props) {
-    const HolocronModule = useHolocronModule([WrappedComponent, holocronConfig]);
-    return React.createElement(HolocronModule, props);
-  };
+export default function useModuleProps(Module, props, moduleState) {
+  const dispatch = useDispatch();
+
+  return React.useMemo(
+    () => getMergeProps(Module, (mergeProps) => mergeProps(moduleState, {
+      dispatch, load: props.load || Module.holocron.load,
+    }, props), props),
+    [dispatch, props, moduleState]
+  );
 }

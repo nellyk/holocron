@@ -1,4 +1,4 @@
-import { getModuleName } from './holocronModule';
+import { getModuleName } from './utility';
 
 // TODO remove this public holocronModule in next major version
 export default function holocronModule(holocronConfig = {}) {
