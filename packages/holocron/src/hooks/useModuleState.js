@@ -13,20 +13,35 @@
  */
 
 import { useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { createSelector } from 'reselect';
 
-import { MODULES_STORE_KEY } from '../ducks/constants';
-import { getInitialState } from '../utility';
+import { MODULES_STORE_KEY, INIT_MODULE_STATE } from '../ducks/constants';
+import { getName, getReducer, getMergeProps } from '../utility';
 
-export default function useModuleState(Module, props) {
-  const moduleStateSelector = useMemo(() => (Module ? createSelector(
+export default function useModuleState(Module, props = {}) {
+  const dispatch = useDispatch();
+  const moduleStateSelector = useMemo(() => createSelector(
     (state) => state.getIn(
-      [MODULES_STORE_KEY, Module.holocron.name],
-      getInitialState(Module, props) || { toJS: () => null }
+      [MODULES_STORE_KEY, getName(Module)],
+      typeof getReducer(Module) === 'function'
+        ? getReducer(Module)(undefined, { type: INIT_MODULE_STATE })
+        : { toJS: () => null }
     ),
     (moduleState) => moduleState.toJS()
-  ) : null), [Module, props]);
+  ), [Module, props]);
 
-  return useSelector(moduleStateSelector);
+  const moduleState = useSelector(moduleStateSelector);
+  const moduleProps = useMemo(
+    () => {
+      if (Module && typeof getMergeProps(Module, props) === 'function') {
+        return getMergeProps(Module, props)(moduleState, {
+          dispatch, load: props.load || Module.holocron.load,
+        }, props) || props;
+      }
+      return props;
+    },
+    [Module, props, moduleState]
+  );
+  return [moduleState, moduleProps];
 }

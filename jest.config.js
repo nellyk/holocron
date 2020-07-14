@@ -18,10 +18,10 @@ module.exports = {
     './jest.setup.js',
   ],
   testMatch: [
-    '**/__tests__/*.spec.{js,jsx}',
+    '**/__tests__/**/*.spec.{js,jsx}',
   ],
   collectCoverageFrom: [
-    'packages/*/src/*.{js,jsx}',
+    '**/packages/*/src/**/*.{js,jsx}',
   ],
   transform: {
     '^.+\\.[t|j]sx?$': 'babel-jest',

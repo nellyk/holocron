@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useHolocron gets holocron context from returned component 1`] = `
+<DocumentFragment>
+  <p>
+    {"modules":{}}
+  </p>
+  <p>
+    {"modules":{},"moduleMap":{},"blocked":[]}
+  </p>
+  <p>
+    {"store":{}}
+  </p>
+</DocumentFragment>
+`;
+
+exports[`useHolocron holocron render 1`] = `
+<DocumentFragment>
+  <p>
+    {"children":null,"lazy":false,"moduleConfig":{"name":"module","options":{"ssr":false}},"moduleLoadStatus":"loaded","moduleName":"module","moduleData":null,"moduleState":null,"holocronState":{"isModuleRegistered":false,"isModuleBlocked":false,"isReducerLoaded":false,"isHolocronLoaded":false,"isHolocronLoading":false,"isHolocronError":{}}}
+  </p>
+</DocumentFragment>
+`;
+
+exports[`useHolocron passes store  1`] = `
+<DocumentFragment>
+  <p>
+    {"holocron":{"withReducers":[],"loaded":[],"failed":{},"loading":{}},"modules":{}}
+  </p>
+  <p>
+    {"modules":{},"moduleMap":{},"blocked":[]}
+  </p>
+  <p>
+    {"store":{}}
+  </p>
+</DocumentFragment>
+`;

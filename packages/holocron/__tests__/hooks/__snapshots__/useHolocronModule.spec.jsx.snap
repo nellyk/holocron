@@ -1,0 +1,45 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createHolocronModule browser loads up module data 1`] = `<DocumentFragment />`;
+
+exports[`createHolocronModule initialization creates a holocron module with configuration and renders 1`] = `
+<DocumentFragment>
+  <p>
+    Hi there
+  </p>
+</DocumentFragment>
+`;
+
+exports[`createHolocronModule initialization creates a holocron module without configuration and renders 1`] = `
+<DocumentFragment>
+  <p>
+    {"moduleLoadStatus":"loaded","moduleState":null,"moduleConfig":{"name":"module","options":{"ssr":false}}}
+  </p>
+</DocumentFragment>
+`;
+
+exports[`createHolocronModule rendering default state 1`] = `<DocumentFragment />`;
+
+exports[`createHolocronModule rendering renders a holocron module by passing in holocronConfig 1`] = `
+<DocumentFragment>
+  <p>
+    <span>
+      name my-module!
+    </span>
+    <span>
+      status: loaded
+    </span>
+    <span>
+      foo: bar
+    </span>
+  </p>
+</DocumentFragment>
+`;
+
+exports[`createHolocronModule rendering renders a holocron module without configuration + default state 1`] = `
+<DocumentFragment>
+  <p>
+    {"moduleLoadStatus":"loaded","moduleState":null,"moduleConfig":{"name":"module","options":{"ssr":false}}}
+  </p>
+</DocumentFragment>
+`;

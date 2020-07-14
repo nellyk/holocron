@@ -18,7 +18,6 @@ import {
   getModules,
   getModuleMap,
   resetModuleRegistry,
-  addHigherOrderComponent,
 } from '../src/moduleRegistry';
 
 function AwesomeModule() {
@@ -61,9 +60,9 @@ describe('updateModuleRegistry', () => {
     jest.clearAllMocks();
     resetModuleRegistry(
       {
-        'awesome-module': addHigherOrderComponent(AwesomeModule),
-        'another-module': addHigherOrderComponent(AnotherModule),
-        'module-three': addHigherOrderComponent(ModuleThree),
+        'awesome-module': AwesomeModule,
+        'another-module': AnotherModule,
+        'module-three': ModuleThree,
       },
       {
         key: 'key123',
@@ -380,7 +379,8 @@ describe('updateModuleRegistry', () => {
   it('should remove modules from the registry', async () => {
     expect.assertions(3);
     expect(getModuleMap().getIn(['modules', 'awesome-module'])).toMatchSnapshot();
-    expect(getModules().getIn(['awesome-module', 'displayName'])).toBe('Connect(HolocronModule(AwesomeModule))');
+    console.log(getModules().toJS());
+    expect(getModules().getIn(['awesome-module']).displayName).toBe('Connect(HolocronModule(AwesomeModule))');
 
     const newModuleMap = {
       key: 'key-123',

@@ -18,7 +18,6 @@ import hoistNonReactStatics from 'hoist-non-react-statics';
 import {
   REDUCER_KEY,
   LOAD_KEY,
-  INIT_MODULE_STATE,
 } from './ducks/constants';
 
 export function isBrowser() {
@@ -30,59 +29,47 @@ export function getGlobalInitialState() {
   return global.__INITIAL_STATE__;
 }
 
-export function getModuleDisplayName(name) {
-  return `HolocronModule(${name})`;
-}
-
-export function getModuleName(Module) {
-  return Module ? Module.displayName || Module.name : 'module';
-}
-
-export const getInitialState = (Module, props) => props.initialState
-  || Module.holocron.initialState
-  || (
-    typeof props.reducer === 'function'
-    && props.reducer(undefined, { type: INIT_MODULE_STATE })
-  )
-  || (
-    typeof Module.holocron.reducer === 'function'
-    && Module.holocron.reducer(undefined, { type: INIT_MODULE_STATE })
-  );
-
+export const getName = (Module) => Module.holocron.name;
+export const getReducer = (Module) => Module.holocron.reducer
+  || Module[REDUCER_KEY];
+export const getMergeProps = (Module, props = {}) => props.mergeProps
+  || Module.holocron.mergeProps;
+export const getLoad = (Module, props = {}) => props.load
+  || Module.holocron.load || Module[LOAD_KEY];
+export const getLoadModuleData = (Module, props = {}) => props.loadModuleData
+  || Module.holocron.loadModuleData || Module.loadModuleData;
 export const getShouldModuleReload = (Module) => (
   Module.holocron.shouldModuleReload
     ? (prevProps, nextProps) => !Module.holocron.shouldModuleReload(prevProps, nextProps)
     : undefined);
 
-export const getMergeProps = (Module, onMergeProps, defaultProps) => {
-  if (Module && typeof Module.holocron.mergeProps === 'function') {
-    return onMergeProps(Module.holocron.mergeProps) || defaultProps;
-  }
-  return defaultProps || undefined;
-};
+export function getModuleDisplayName(name) {
+  return `HolocronModule(${name})`;
+}
 
-export const createLoad = (load) => (props) => (dispatch) => dispatch(load(props));
+export function getModuleName(Module, fallbackName) {
+  return Module ? Module.displayName || Module.name : fallbackName;
+}
+
+export const createLoad = (load) => (props, dispatch) => dispatch(load(props));
 export const createLoadModuleData = (
   loadModuleData,
   Module
-) => (props) => (dispatch, getState, { fetchClient }) => loadModuleData({
+) => (props, dispatch, { getState, fetchClient } = {}) => loadModuleData({
   store: { dispatch, getState },
   fetchClient,
   ownProps: props,
   module: Module,
 });
 export const getLoader = (Module, props) => {
-  const getLoad = () => props.load || Module.holocron.load;
-  const getLoadModuleData = () => props.loadModuleData
-    || Module.holocron.loadModuleData
-    || Module.loadModuleData;
   let loader = () => undefined;
-  if (getLoad()) {
+  if (getLoad(Module, props)) {
     console.warn(`The Holocron Config in '${Module.displayName}' is using the 'load' function which has been deprecated. Please use 'loadModuleData' instead.`);
     // TODO: deprecation (load) - remove in next major version
-    loader = createLoad(getLoad());
-  } else if (getLoadModuleData()) {
-    loader = createLoadModuleData(getLoadModuleData(), Module);
+    loader = createLoad(getLoad(Module, props));
+  }
+  if (getLoadModuleData(Module, props)) {
+    loader = createLoadModuleData(getLoadModuleData(Module, props), Module);
   }
   return (...args) => Promise.resolve(loader(...args)).catch((error) => {
     console.error(`Error while attempting to call 'load' or 'loadModuleData' inside Holocron module ${Module.holocron.name}.`, error);
@@ -93,18 +80,20 @@ export const getLoader = (Module, props) => {
 export function validateModule(Module, withConfig) {
   const config = {
     name: 'module',
-    ...{ options: {} },
     ...withConfig || {},
     ...Module.holocron || {},
   };
 
   if (Module[REDUCER_KEY] && !config.reducer) {
     config.reducer = Module[REDUCER_KEY];
-  } else if (config.reducer && !Module[REDUCER_KEY]) {
+  }
+
+  if (config.reducer && !Module[REDUCER_KEY]) {
     // eslint-disable-next-line no-param-reassign
     Module[REDUCER_KEY] = config.reducer;
   }
 
+  if (!config.options) config.options = { ssr: false };
   if (config.load && !Module[LOAD_KEY] && config.options.ssr) {
     // eslint-disable-next-line no-param-reassign
     Module[LOAD_KEY] = config.load;
@@ -123,15 +112,11 @@ export function validateModule(Module, withConfig) {
 }
 
 export function memoizeHolocronModule(Module, HolocronWrapper) {
-  const HolocronModule = validateModule(Module);
-  return hoistNonReactStatics(
-    React.memo(
-      hoistNonReactStatics(HolocronWrapper, HolocronModule),
-      getShouldModuleReload(HolocronModule)
-    ),
-    HolocronWrapper,
-    {
-      displayName: getModuleDisplayName(getModuleName(HolocronModule)),
-    }
+  const ValidHolocronModule = validateModule(Module);
+  const MemoizedHolocronModule = React.memo(
+    hoistNonReactStatics(HolocronWrapper, ValidHolocronModule),
+    getShouldModuleReload(ValidHolocronModule)
   );
+  MemoizedHolocronModule.displayName = Module.displayName;
+  return hoistNonReactStatics(MemoizedHolocronModule, HolocronWrapper);
 }

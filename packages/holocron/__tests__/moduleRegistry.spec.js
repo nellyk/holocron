@@ -23,8 +23,9 @@ import {
   getModuleMap,
   resetModuleRegistry,
   setModuleMap,
-  addHigherOrderComponent,
+  // addHigherOrderComponent,
 } from '../src/moduleRegistry';
+import { createHolocronModule } from '../src/hooks/useHolocronModule';
 
 describe('moduleRegistry', () => {
   it('should maintain a block list', () => {
@@ -70,7 +71,7 @@ describe('moduleRegistry', () => {
   it('should use alternative modules when provided', () => {
     const GoodModule = () => null;
     const AltModule = () => null;
-    const AltModuleHoC = addHigherOrderComponent(AltModule);
+    const AltModuleHoC = createHolocronModule(AltModule);
     const altModules = iMap({ 'good-module': AltModuleHoC });
     registerModule('good-module', GoodModule);
     expect(getModule('good-module').displayName).toEqual('Connect(HolocronModule(GoodModule))');

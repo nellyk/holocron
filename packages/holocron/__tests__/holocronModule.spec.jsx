@@ -26,15 +26,11 @@ import { REDUCER_KEY, LOAD_KEY } from '../src/ducks/constants';
 
 import holocronModule from '../src/holocronModule';
 
+import { wrapReduxProvider } from './__util__/renderer';
+
 const sleep = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
-
-const wrapReduxProvider = (render, store) => (
-  <Provider store={store}>
-    {render()}
-  </Provider>
-);
 
 const warn = jest.spyOn(console, 'warn');
 const error = jest.spyOn(console, 'error');
@@ -179,8 +175,10 @@ describe('holocronModule', () => {
 
   it('should wrap module with no arguments', () => {
     const MyModuleComponent = holocronModule()(() => <div>Mock Module</div>);
-    const mockStore = createStore((state) => state, fromJS({ modules: { 'mock-module': { key: 'value' } } }));
-    const tree = renderer.create(wrapReduxProvider(() => <MyModuleComponent />, mockStore));
+    const tree = renderer.create(wrapReduxProvider({
+      children: () => <MyModuleComponent />,
+      initialState: fromJS({ modules: { 'mock-module': { key: 'value' } } }),
+    }));
 
     expect(tree.toJSON()).toMatchSnapshot();
   });

@@ -12,7 +12,12 @@
  * under the License.
  */
 
-export { default as useHolocronModule, useHolocronModuleContext } from './useHolocronModule';
+export {
+  default as useHolocron, useHolocronContext, Holocron, HolocronContext,
+} from './useHolocronModule';
+export {
+  default as useHolocronModule, useHolocronModuleContext, HolocronModule, HolocronModuleContext,
+} from './useHolocronModule';
 export { default as useHolocronLoader } from './useHolocronLoader';
 export { default as useHolocronState } from './useHolocronState';
 export { default as useModuleLoader } from './useModuleLoader';

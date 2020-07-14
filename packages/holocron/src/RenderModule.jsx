@@ -13,15 +13,15 @@
  */
 
 import React from 'react';
+import { ReactReduxContext } from 'react-redux';
 import PropTypes from 'prop-types';
-import { useStore } from 'react-redux';
 
-import { useHolocronModule } from './hooks';
+import { getModule } from './moduleRegistry';
 
 export default function RenderModule({ children, moduleName, props }) {
-  const store = useStore();
+  const { store } = React.useContext(ReactReduxContext);
 
-  const [Module] = useHolocronModule(moduleName, store.modules);
+  const Module = getModule(moduleName, store.modules);
   if (!Module) {
     console.warn(`Module ${moduleName} was not found in the holocron module registry`);
     return null;

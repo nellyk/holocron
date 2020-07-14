@@ -22,3 +22,13 @@ export const MODULE_LOAD_FAILED = '@@holocron/MODULE_LOAD_FAILED';
 export const MODULE_LOADING = '@@holocron/MODULE_LOADING';
 export const MODULE_REDUCER_ADDED = '@@holocron/MODULE_REDUCER_ADDED';
 export const INIT_MODULE_STATE = '@@holocron/INIT_MODULE_STATE';
+
+export const REGISTRY_KEY = 'registry';
+export const REGISTRY_PREFIX = `@@${REGISTRY_KEY}`;
+export const REGISTRY_MODULES_KEY = 'modules';
+export const REGISTRY_MODULE_BLOCKED_KEY = 'blockedModules';
+export const REGISTRY_MODULE_MAP_KEY = 'moduleMap';
+export const REGISTER_MODULE = `${REGISTRY_PREFIX}/REGISTER_MODULE`;
+export const BLOCK_MODULE = `${REGISTRY_PREFIX}/BLOCK_MODULE`;
+export const SET_MODULE_MAP = `${REGISTRY_PREFIX}/SET_MODULE_MAP`;
+export const RESET_MODULES_AND_MAP = `${REGISTRY_PREFIX}/RESET_MODULES_AND_MAP`;

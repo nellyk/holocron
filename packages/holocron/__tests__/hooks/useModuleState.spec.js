@@ -12,18 +12,22 @@
  * under the License.
  */
 
-import React from 'react';
-import { useDispatch } from 'react-redux';
+/* eslint-disable react/prop-types, import/no-extraneous-dependencies  */
+import { renderHook } from '@testing-library/react-hooks';
 
-import { getMergeProps } from '../utility';
+import useModuleState from '../../src/hooks/useModuleState';
+import { HolocronWrapper } from '../__util__/renderer';
 
-export default function useModuleProps(Module, props, moduleState) {
-  const dispatch = useDispatch();
+describe(useModuleState.name, () => {
+  it('should render', async () => {
+    const moduleName = 'test-module';
+    const Module = () => null;
+    Module.holocron = { name: moduleName };
 
-  return React.useMemo(
-    () => getMergeProps(Module, (mergeProps) => mergeProps(moduleState, {
-      dispatch, load: props.load || Module.holocron.load,
-    }, props), props),
-    [dispatch, props, moduleState]
-  );
-}
+    const { result } = renderHook(
+      () => useModuleState(Module),
+      { wrapper: HolocronWrapper }
+    );
+    expect(result.current).toMatchSnapshot();
+  });
+});

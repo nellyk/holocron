@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useModuleState should render 1`] = `
+Array [
+  null,
+  Object {},
+]
+`;

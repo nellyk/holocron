@@ -13,6 +13,7 @@
  */
 
 import { Map as iMap, Set as iSet } from 'immutable';
+import { batch } from 'react-redux';
 import { getModule, getModuleMap } from '../moduleRegistry';
 import {
   HOLOCRON_STORE_KEY,
@@ -78,7 +79,7 @@ export function moduleLoaded(moduleName) {
   };
 }
 
-function moduleLoadFailed(moduleName, error) {
+export function moduleLoadFailed(moduleName, error) {
   return {
     type: MODULE_LOAD_FAILED,
     moduleName,
@@ -86,7 +87,7 @@ function moduleLoadFailed(moduleName, error) {
   };
 }
 
-function moduleLoading(moduleName, promise) {
+export function moduleLoading(moduleName, promise) {
   return {
     type: MODULE_LOADING,
     moduleName,
@@ -115,11 +116,11 @@ export function getLoadingPromise(moduleName) {
 }
 
 /* eslint-disable global-require */
-export function loadModule(moduleName) {
+export function loadModule(moduleName, registry = { getModuleMap, getModule }) {
   return (dispatch, getState, { modules, rebuildReducer }) => {
     const state = getState();
     if (isLoaded(moduleName)(state)) {
-      return Promise.resolve(getModule(moduleName, modules));
+      return Promise.resolve(registry.getModule(moduleName, modules));
     }
 
     if (failedToLoad(moduleName)(state)) {
@@ -130,7 +131,7 @@ export function loadModule(moduleName) {
       return getLoadingPromise(moduleName)(state);
     }
 
-    const moduleData = getModuleMap().getIn([MODULES_STORE_KEY, moduleName]);
+    const moduleData = registry.getModuleMap().getIn([MODULES_STORE_KEY, moduleName]);
 
     if (!moduleData) {
       const moduleLoadError = new Error(`Could not load Module ${moduleName} because it does not exist in the Module Version Map`);
@@ -141,7 +142,7 @@ export function loadModule(moduleName) {
     let loadPromise;
 
     if (modules) {
-      const module = getModule(moduleName, modules);
+      const module = registry.getModule(moduleName, modules);
       loadPromise = module ? Promise.resolve(module) : Promise.reject(new Error(`Module ${moduleName} was not preloaded on server`));
     } else {
       loadPromise = require('../loadModule.web.js').default(moduleName, moduleData);
@@ -152,12 +153,14 @@ export function loadModule(moduleName) {
     return loadPromise
       .then(
         (module) => {
-          if (module[REDUCER_KEY]) {
-            dispatch(registerModuleReducer(moduleName));
-            rebuildReducer();
-            dispatch({ type: MODULE_REDUCER_ADDED });
-          }
-          dispatch(moduleLoaded(moduleName));
+          batch(() => {
+            if (module[REDUCER_KEY]) {
+              dispatch(registerModuleReducer(moduleName));
+              rebuildReducer();
+              dispatch({ type: MODULE_REDUCER_ADDED });
+            }
+            dispatch(moduleLoaded(moduleName));
+          });
           return module;
         },
         (error) => {

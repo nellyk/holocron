@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`useModuleRegistry returns state 1`] = `
+Object {
+  "blockModule": [Function],
+  "blocked": Immutable.List [],
+  "dispatch": [Function],
+  "getBlockedModules": [Function],
+  "getModule": [Function],
+  "getModuleMap": [Function],
+  "getModules": [Function],
+  "isModuleBlocked": [Function],
+  "moduleMap": Immutable.Map {},
+  "modules": Immutable.Map {},
+  "registerModule": [Function],
+  "resetModuleRegistry": [Function],
+  "setModuleMap": [Function],
+}
+`;

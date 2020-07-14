@@ -12,68 +12,107 @@
  * under the License.
  */
 
+/* eslint-disable react/destructuring-assignment */
+
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import useHolocronLoader from './useHolocronLoader';
+import { useHolocronContext } from './useHolocron';
 import useHolocronState from './useHolocronState';
 import useModuleState from './useModuleState';
 import useModuleLoader from './useModuleLoader';
-import useModuleProps from './useModuleProps';
 
-import { memoizeHolocronModule } from '../utility';
+import {
+  validateModule,
+  memoizeHolocronModule,
+  getModuleDisplayName,
+  getModuleName,
+  getName,
+} from '../utility';
 
 export const HolocronModuleContext = React.createContext({});
+
+export function createHolocronModule(Component, holocronConfig) {
+  if (!Component) return () => null;
+
+  const Module = validateModule(Component, holocronConfig);
+  Module.displayName = getModuleDisplayName(getModuleName(Module));
+  const moduleName = getName(Module);
+  // eslint-disable-next-line no-underscore-dangle, camelcase
+  function __Holocron_Module__(props) {
+    const { registry, plugins } = useHolocronContext();
+
+    const [, holocronState, loadModule] = useHolocronState(moduleName);
+    const [moduleState, moduleProps] = useModuleState(Module, props);
+    const [moduleData, moduleLoadStatus, loadModuleData] = useModuleLoader(Module, moduleProps);
+
+    const context = {
+      moduleConfig: Module.holocron,
+      moduleLoadStatus,
+      moduleName,
+      moduleData,
+      moduleMetaData: registry.getModuleMetaData(),
+      moduleState,
+      holocronState,
+      loadModuleData,
+      loadModule,
+    };
+
+    return (
+      <HolocronModuleContext.Provider value={context}>
+        {plugins.renderModulePlugins((
+          <Module
+            // eslint-disable-next-line react/jsx-props-no-spreading
+            {...moduleProps}
+            // eslint-disable-next-line react/jsx-props-no-spreading
+            {...context}
+          />
+        ), context)}
+      </HolocronModuleContext.Provider>
+    );
+  }
+  __Holocron_Module__.propTypes = {
+    lazy: PropTypes.bool,
+    load: PropTypes.func,
+    loadModuleData: PropTypes.func,
+    reducer: PropTypes.func,
+    initialState: PropTypes.shape({}),
+  };
+  __Holocron_Module__.defaultProps = {
+    lazy: false,
+    load: undefined,
+    loadModuleData: undefined,
+    reducer: undefined,
+    initialState: undefined,
+  };
+
+  return memoizeHolocronModule(Module, __Holocron_Module__);
+}
 
 export function useHolocronModuleContext() {
   return React.useContext(HolocronModuleContext);
 }
 
-export default function useHolocronModule(module, modules) {
-  const [Module, holocronConfig, holocronLoadStatus] = useHolocronLoader(module, modules);
-  return React.useMemo(() => {
-    if (!Module) return () => null;
-
-    function HolocronModule(props) {
-      const holocronState = useHolocronState(Module);
-      const moduleState = useModuleState(Module, props);
-      const moduleProps = useModuleProps(Module, props, moduleState);
-      const [moduleLoadStatus, loadModule] = useModuleLoader(Module, moduleProps);
-
-      return (
-        <HolocronModuleContext.Provider
-          value={{
-            holocronConfig,
-            holocronLoadStatus,
-            holocronState,
-            moduleLoadStatus,
-            moduleState,
-            loadModule,
-          }}
-        >
-          <Module
-            // eslint-disable-next-line react/jsx-props-no-spreading
-            {...props}
-            moduleState={moduleState}
-            moduleLoadStatus={moduleLoadStatus}
-          />
-        </HolocronModuleContext.Provider>
-      );
-    }
-
-    HolocronModule.propTypes = {
-      load: PropTypes.func,
-      loadModuleData: PropTypes.func,
-      reducer: PropTypes.func,
-      initialState: PropTypes.shape({}),
-    };
-    HolocronModule.defaultProps = {
-      load: undefined,
-      loadModuleData: undefined,
-      reducer: undefined,
-      initialState: undefined,
-    };
-
-    return memoizeHolocronModule(Module, HolocronModule);
-  }, [Module]);
+export default function useHolocronModule(moduleName) {
+  const [Module] = useHolocronState(moduleName);
+  return React.useMemo(() => createHolocronModule(Module), [Module]);
 }
+
+export function HolocronModule({ children, moduleName, ...props }) {
+  // eslint-disable-next-line no-underscore-dangle, camelcase
+  const __Holocron_Module__ = useHolocronModule(moduleName);
+  return (
+    // eslint-disable-next-line react/jsx-pascal-case, react/jsx-props-no-spreading
+    <__Holocron_Module__ {...props}>
+      {children}
+    </__Holocron_Module__>
+  );
+}
+HolocronModule.propTypes = {
+  children: PropTypes.node,
+  moduleName: PropTypes.string,
+};
+HolocronModule.defaultProps = {
+  children: null,
+  moduleName: 'module',
+};

@@ -12,13 +12,8 @@
  * under the License.
  */
 
-import React from 'react';
-
-import { useHolocronModule } from './hooks';
+import { createHolocronModule } from './hooks/useHolocronModule';
 
 export default function holocronModule(holocronConfig) {
-  return (WrappedComponent) => function HolocronWrapper(props) {
-    const HolocronModule = useHolocronModule([WrappedComponent, holocronConfig]);
-    return React.createElement(HolocronModule, props);
-  };
+  return (WrappedComponent) => createHolocronModule(WrappedComponent, holocronConfig, 'loaded');
 }

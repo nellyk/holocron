@@ -2,55 +2,44 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
-// import { render } from '@testing-library/react';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { create } from 'react-test-renderer';
+import { render } from '@testing-library/react';
 
+import { Holocron } from '../../src/hooks/useHolocron';
 import createHolocronStore from '../../src/createHolocronStore';
 
-const wrapReduxProvider = ({
+export const HolocronWrapper = ({
   // eslint-disable-next-line react/prop-types
-  children, initialState, fetchClient, enhancer,
-  // eslint-disable-next-line react/prop-types
-  localsForBuildInitialState, store: providedStore,
-}) => {
-  const store = providedStore || createHolocronStore({
+  children, reducer, initialState, holocronModuleMap, modules,
+}) => (
+  <Holocron
+    reducer={reducer}
+    initialState={initialState}
+    holocronModuleMap={holocronModuleMap}
+    modules={modules}
+  >
+    {typeof children === 'function' ? children() : children}
+  </Holocron>
+);
+
+// eslint-disable-next-line react/prop-types
+export const ReduxWrapper = ({ children, store: storeProp, initialState }) => {
+  const store = storeProp || createHolocronStore({
     reducer: (state) => state,
     initialState,
-    enhancer,
-    localsForBuildInitialState,
-    extraThunkArguments: {
-      fetchClient,
-    },
   });
-
-  // console.log(store.getState().toJS(), initialState.toJS());
+  jest.spyOn(store, 'dispatch');
 
   return (
     <Provider store={store}>
-      {children}
+      {typeof children === 'function' ? children(store) : children}
     </Provider>
   );
 };
 
-const customRender = (
-  children, {
-    store,
-    initialState,
-    fetchClient,
-    enhancer,
-    localsForBuildInitialState,
-    ...options
-  } = {}
-) => create(wrapReduxProvider({
+const customRender = (children, options = {}) => render(
   children,
-  store,
-  initialState,
-  fetchClient,
-  enhancer,
-  localsForBuildInitialState,
-}), options);
-// const customRender = (ui, options) => render(ui, { wrapper: wrapReduxProvider, ...options });
+  { wrapper: options.wrap && ReduxWrapper, ...options }
+);
 
 // re-export everything
 // eslint-disable-next-line import/no-extraneous-dependencies

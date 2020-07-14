@@ -12,58 +12,56 @@
  * under the License.
  */
 
-import { useMemo, useEffect } from 'react';
-import { useSelector, useDispatch, batch } from 'react-redux';
+import {
+  useMemo, useEffect, useState, useCallback,
+} from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { createSelector } from 'reselect';
 
-import {
-  HOLOCRON_STORE_KEY,
-  MODULE_REDUCER_ADDED,
-} from '../ducks/constants';
-import {
-  getInitialState,
-  registerModuleReducer,
-  moduleLoaded,
-} from '../ducks/load';
+import { HOLOCRON_STORE_KEY } from '../ducks/constants';
+import { getInitialState, loadModule } from '../ducks/load';
+import { validateModule } from '../utility';
+import { useHolocronContext } from './useHolocron';
 
-export default function useHolocronState(Module, props) {
+export default function useHolocronState(moduleName) {
+  const holocron = useHolocronContext();
   const holocronStateSelector = useMemo(() => createSelector(
     (state) => state.getIn(
       [HOLOCRON_STORE_KEY],
       getInitialState()
-    )
-  ), []);
-  const holocronState = useSelector(holocronStateSelector);
-  const moduleName = useMemo(() => (Module ? Module.holocron.name : props.name) || '', [Module, props]);
-  const holocronModuleState = useMemo(() => ({
-    isHolocronError: holocronState.getIn(['failed', moduleName], false),
-    isHolocronLoading: holocronState.getIn(['loading', moduleName], false),
-    isHolocronLoaded: holocronState.getIn(['loaded', moduleName], false),
-    isReducerLoaded: holocronState.getIn(['withReducers', moduleName], false),
-  }), [holocronState, moduleName]);
+    ),
+    (holocronState) => ({
+      isModuleRegistered: !!holocron.registry.getModule(moduleName),
+      isModuleBlocked: !!holocron.registry.isModuleBlocked(moduleName),
+      isReducerLoaded: holocronState.getIn(['withReducers', moduleName], false),
+      isHolocronLoaded: holocronState.getIn(['loaded', moduleName], false),
+      isHolocronLoading: holocronState.getIn(['loading', moduleName], false),
+      isHolocronError: holocronState.getIn(['failed', moduleName], false),
+    })
+  ), [moduleName, holocron.registry]);
+  const holocronModuleState = useSelector(holocronStateSelector);
+  const { isModuleRegistered } = holocronModuleState;
 
   const dispatch = useDispatch();
+  const [Module, setModule] = useState(() => holocron.registry.getModule(moduleName));
+
+  const loadHolocronModule = useCallback(() => {
+    if (Module) return Module;
+
+    const promise = dispatch(loadModule(moduleName, holocron.registry))
+      .then((LoadedModule) => {
+        if (LoadedModule) {
+          if (!isModuleRegistered) holocron.registry.registerModule(moduleName, LoadedModule);
+          setModule(validateModule(LoadedModule));
+        }
+        return LoadedModule;
+      });
+    return promise;
+  }, [moduleName, holocron.registry]);
+
   useEffect(() => {
-    if (Module) {
-      const { reducer, name } = Module.holocron;
-      const {
-        isHolocronLoaded,
-        isReducerLoaded,
-      } = holocronState;
-      // rebuild store with reducer if it exists and is not included already
-      if (reducer && isReducerLoaded === false) {
-        batch(() => {
-          dispatch(registerModuleReducer(name));
-          dispatch((_, __, { rebuildReducers }) => { rebuildReducers(); });
-          dispatch({ type: MODULE_REDUCER_ADDED });
-        });
-      }
+    if (moduleName) loadHolocronModule();
+  }, [moduleName]);
 
-      if (isHolocronLoaded === false) {
-        dispatch(moduleLoaded(name));
-      }
-    }
-  }, [Module]);
-
-  return holocronModuleState;
+  return [Module, holocronModuleState, loadHolocronModule];
 }

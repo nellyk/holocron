@@ -12,7 +12,9 @@
  * under the License.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import {
+  useState, useCallback, useEffect, useRef,
+} from 'react';
 import { useDispatch } from 'react-redux';
 
 import {
@@ -21,16 +23,21 @@ import {
   getGlobalInitialState,
 } from '../utility';
 
-export default function useModuleLoader(Module, props) {
+export default function useModuleLoader(Module, props = {}) {
   const dispatch = useDispatch();
 
   const [status, setStatus] = useState('initial');
-
+  const [moduleData, setData] = useState(null);
+  const initialLoad = useRef(false);
   const load = useCallback((providedProps = props) => {
     setStatus('loading');
     const loader = getLoader(Module, providedProps);
-    return Promise.resolve(dispatch(loader(providedProps)))
+    return Promise.resolve(
+      dispatch((_, getState, { fetchClient }) => loader(
+        providedProps, dispatch, { getState, fetchClient }
+      )))
       .then((data) => {
+        setData(data);
         setStatus('loaded');
         return data;
       })
@@ -40,17 +47,19 @@ export default function useModuleLoader(Module, props) {
       });
   }, [Module, props]);
 
-  // should only run once (componentDidMount)
+  // runs on props update (componentWillReceiveProps)
   useEffect(() => {
-    // eslint-disable-next-line no-underscore-dangle
-    if (isBrowser() && !getGlobalInitialState()) load();
-    else setStatus('loaded');
-  }, []);
-
-  // runs with props update (componentWillReceiveProps)
-  useEffect(() => {
-    if (isBrowser() && ['loading', 'initial'].includes(status) === false) load();
+    if (!props.lazy && initialLoad.current && isBrowser() && ['loading', 'initial'].includes(status) === false) load();
   }, [props, status, load]);
 
-  return [status, load];
+  // runs once (componentDidMount)
+  useEffect(() => {
+    initialLoad.current = true;
+    if (!props.lazy) {
+      if (isBrowser() && !getGlobalInitialState()) load();
+      else setStatus('loaded');
+    }
+  }, []);
+
+  return [moduleData, status, load];
 }
