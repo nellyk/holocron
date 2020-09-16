@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   checkCommit:
     name: Check commit
