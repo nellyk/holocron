@@ -1,6 +1,11 @@
 name: Release
 
 on:
+  workflow_dispatch:
+   inputs:
+    tag_version:
+     description: 'Semantic Version'
+     required: true
   push:
     branches:
       - main
@@ -31,10 +36,17 @@ jobs:
          NODE_ENV=development yarn
       - name: Test packages
         run: yarn test
+      - name: Set release version 
+        id: set_tag_version
+        run: |
+          if [[ "${{ github.event.inputs.tag_version }}" == "" ]]; then
+          echo ::set-env name=tagversion::$( egrep -o '([0-9]+\.){2}(\*|[0-9]+)(-\S*)?' <<< ${needs.checkCommit.outputs.commitMsg} )
+          else
+          echo ::set-output name=tagversion::${{ github.event.inputs.tag_version }}
       - name: Release packages
         env:
           NODE_ENV: production
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |-
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> $HOME/.npmrc 2> /dev/null
-          yarn lerna:deploy -- "${{ needs.checkCommit.outputs.commitMsg }}"
+          yarn lerna:deploy -- "${{ steps.set_tag_version.outputs.tagversion }}"
