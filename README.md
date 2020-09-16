@@ -10,7 +10,7 @@
 
 ## 👩‍💻 Hiring 👨‍💻
 
-Want to get paid for your contributions to `holocron`?
+Want to get paid for your contributions to `holocron`
 > Send your resume to oneamex.careers@aexp.com
 
 
