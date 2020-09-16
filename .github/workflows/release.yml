@@ -29,7 +29,6 @@ jobs:
       - name: Install yarn
         run: |-
          NODE_ENV=development yarn
-         yarn lerna bootstrap   
       - name: Test packages
         run: yarn test
       - name: Release packages
